@@ -1,20 +1,20 @@
-# Load the data set
+# Load the dataset
 airline <- read.csv("Invistico_Airline.csv")
 
-# Check the structure of the data set
-str(airline)   # 129880 rows , 23 columns
+# Check the structure of the dataset
+str(airline)   # 129880 rows, 23 columns
 
-# Check the total number of missing values in the data set
+# Check the total number of missing values in the dataset
 sum(is.na(airline))
 
-# Load the library for data manipulation
+# Load the necessary libraries for data manipulation
 library(dplyr)
 
 # Create a new column 'Age_Group' based on age categories
-new_airline <- airline %>%
+new_airline <- airline |> 
   mutate(
     Age_Group = case_when(
-      Age >= 0 & Age <= 14 ~ "Children (00-14 years)",
+      Age >= 0 & Age <= 14 ~ "Children (0-14 years)",
       Age >= 15 & Age <= 24 ~ "Youth (15-24 years)",
       Age >= 25 & Age <= 64 ~ "Adults (25-64 years)",
       Age >= 65 ~ "Seniors (65 years and over)",
@@ -22,15 +22,12 @@ new_airline <- airline %>%
     )
   )
 
-# Reorder column using relocate()
+# Reorder columns using relocate()
 new_airline <- new_airline |>
   relocate(Age_Group, .after = Age)
 
-View(new_airline)
-
 # Define the labels for the five-level ordinal scale
-labels <- c("Very Poor","Poor", "Below Average", "Average", "Above Average", "Excellent")
-
+labels <- c("Very Poor", "Poor", "Below Average", "Average", "Above Average", "Excellent")
 
 # Columns to categorize
 cols_to_categorize <- c(
@@ -51,15 +48,20 @@ cols_to_categorize <- c(
 
 # Loop through columns to categorize
 for (col_name in cols_to_categorize) {
-  if (is.numeric(new_airline[[col_name]]) && all(new_airline[[col_name]] %in% 0:5)) {
+  if (is.numeric(new_airline[[col_name]]) &&
+      all(new_airline[[col_name]] %in% 0:5)) {
     # Replace values with labels
-    new_airline[[col_name]] <- factor(new_airline[[col_name]], levels = 0:5, labels = labels)
+    new_airline[[col_name]] <-
+      factor(new_airline[[col_name]], levels = 0:5, labels = labels)
   }
 }
 
+# Display the resulting dataset with replaced labels
 View(new_airline)
 
- 
+
+
+
 ### Data Visualization ###
 
 # Plot customer satisfaction by gender
@@ -143,10 +145,10 @@ airline %>%
     color = "black"
   ) + # Add white color to text
   labs(title = "Customer Satisfaction by Gender and Customer Type", x = "Satisfaction", y = "Count") +
-  facet_wrap(~ Gender,
-             nrow = 1,
-             scales = "free_x",
-             switch = "x") + # Use facet_wrap with nrow = 1 to create a single row of facets
+  facet_wrap( ~ Gender,
+              nrow = 1,
+              scales = "free_x",
+              switch = "x") + # Use facet_wrap with nrow = 1 to create a single row of facets
   scale_x_discrete(labels = c("Dissatisfied", "Satisfied")) +
   theme_minimal() +
   theme(
