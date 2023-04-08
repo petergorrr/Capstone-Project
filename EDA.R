@@ -1,33 +1,30 @@
 # Load the dataset
 airline <- read.csv("Invistico_Airline.csv")
 
-# Check the structure of the dataset
-str(airline)   # 129880 rows, 23 columns
-
-# Check the total number of missing values in the dataset
-sum(is.na(airline))
-
 # Load the necessary libraries for data manipulation
 library(dplyr)
 
-# Create a new column 'Age_Group' based on age categories
-new_airline <- airline |> 
+# Create a new column 'Age_Group' based on age categories using mutate()
+new_airline <- airline %>%
   mutate(
-    Age_Group = case_when(
+    "Age Group" = case_when(
       Age >= 0 & Age <= 14 ~ "Children (0-14 years)",
       Age >= 15 & Age <= 24 ~ "Youth (15-24 years)",
       Age >= 25 & Age <= 64 ~ "Adults (25-64 years)",
       Age >= 65 ~ "Seniors (65 years and over)",
       TRUE ~ NA_character_  # NA for other cases
     )
-  )
-
-# Reorder columns using relocate()
-new_airline <- new_airline |>
-  relocate(Age_Group, .after = Age)
+  ) %>%
+  relocate("Age Group", .after = Age) # Reorder columns using relocate()
 
 # Define the labels for the five-level ordinal scale
-labels <- c("Very Poor", "Poor", "Below Average", "Average", "Above Average", "Excellent")
+labels <-
+  c("Very Poor",
+    "Poor",
+    "Below Average",
+    "Average",
+    "Above Average",
+    "Excellent")
 
 # Columns to categorize
 cols_to_categorize <- c(
@@ -46,15 +43,38 @@ cols_to_categorize <- c(
   "Online.boarding"
 )
 
-# Loop through columns to categorize
-for (col_name in cols_to_categorize) {
-  if (is.numeric(new_airline[[col_name]]) &&
-      all(new_airline[[col_name]] %in% 0:5)) {
-    # Replace values with labels
-    new_airline[[col_name]] <-
-      factor(new_airline[[col_name]], levels = 0:5, labels = labels)
-  }
-}
+# Apply factor labels to columns
+new_airline <- new_airline %>%
+  mutate(across(
+    all_of(cols_to_categorize),
+    factor,
+    levels = 0:5,
+    labels = labels
+  ))
+
+# Rename columns in the dataset
+new_airline <- new_airline %>%
+  rename(
+    "Satisfaction" = satisfaction,
+    "Customer Type" = Customer.Type,
+    "Type of Travel" = Type.of.Travel,
+    "Flight Distance" = Flight.Distance,
+    "Seat Comfort" = Seat.comfort,
+    "Departure/Arrival Time Convenient" = Departure.Arrival.time.convenient,
+    "Food and Drink" = Food.and.drink,
+    "Gate and Location" = Gate.location,
+    "Inflight Wifi Service" = Inflight.wifi.service,
+    "Inflight Entertainment" = Inflight.entertainment,
+    "Online Support" = Online.support,
+    "Ease of Online Booking" = Ease.of.Online.booking,
+    "On-board Service" = On.board.service,
+    "Leg Room Service" = Leg.room.service,
+    "Baggage Handling" = Baggage.handling,
+    "Check-in Service" = Checkin.service,
+    "Online Boarding" = Online.boarding,
+    "Departure Delay in Minutes" = Departure.Delay.in.Minutes,
+    "Arrival Delay in Minutes" = Arrival.Delay.in.Minutes
+  )
 
 # Display the resulting dataset with replaced labels
 View(new_airline)
@@ -70,11 +90,11 @@ library(ggplot2)
 library(forcats)
 
 
-airline |>
-  group_by(Gender, satisfaction) |>
+new_airline |>
+  group_by(Gender, Satisfaction) |>
   summarise(n = n()) |>
   mutate(perc = n / sum(n) * 100) |>
-  ggplot(aes(x = satisfaction, y = n, fill = satisfaction)) +  # Updated fill aesthetics to satisfaction
+  ggplot(aes(x = Satisfaction, y = n, fill = Satisfaction)) +  # Updated fill aesthetics to satisfaction
   geom_bar(
     stat = "identity",
     position = "stack",
@@ -121,11 +141,11 @@ airline |>
 # However, it could be due to differences in expectations or
 # experiences between male and female customers.
 
-airline %>%
-  group_by(Gender, satisfaction, Customer.Type) %>%
+new_airline %>%
+  group_by(Gender, Satisfaction, `Customer Type`) %>%
   summarise(n = n()) %>%
   mutate(perc = n / sum(n) * 100) %>%
-  ggplot(aes(x = satisfaction, y = n, fill = Customer.Type)) +
+  ggplot(aes(x = Satisfaction, y = n, fill = `Customer Type`)) +
   geom_bar(
     stat = "identity",
     position = "stack",
@@ -137,18 +157,15 @@ airline %>%
     aes(label = paste0(round(perc), "%")),
     position = position_stack(vjust = 0.5),
     size = 2.75,
-    # Adjust text size
     hjust = 0.5,
-    # Center the text horizontally
     vjust = 0.5,
-    # Center the text vertically
     color = "black"
-  ) + # Add white color to text
+  ) +
   labs(title = "Customer Satisfaction by Gender and Customer Type", x = "Satisfaction", y = "Count") +
   facet_wrap( ~ Gender,
               nrow = 1,
               scales = "free_x",
-              switch = "x") + # Use facet_wrap with nrow = 1 to create a single row of facets
+              switch = "x") +
   scale_x_discrete(labels = c("Dissatisfied", "Satisfied")) +
   theme_minimal() +
   theme(
@@ -159,14 +176,15 @@ airline %>%
     legend.text = element_text(size = 10)
   )
 
+
 # A surprising fact is that loyal male customers actually make up 77% of those
 # who are dissatisfied with the airline service.
 
-airline %>%
-  group_by(Gender, Customer.Type) %>%
+new_airline %>%
+  group_by(Gender, `Customer Type`) %>%
   summarise(n = n()) %>%
   mutate(perc = n / sum(n) * 100) %>%
-  ggplot(aes(x = Gender, y = n, fill = Customer.Type)) +
+  ggplot(aes(x = Gender, y = n, fill = `Customer Type`)) +
   geom_bar(
     stat = "identity",
     position = "stack",
@@ -192,25 +210,20 @@ airline %>%
 
 # I do not see anything special about this.
 
-
-# Load required packages
-library(dplyr)
-library(ggplot2)
-
-# Group by Age_Group and Customer.Type, calculate counts
+# Group by Age Group and Customer Type, calculate counts
 age_group_counts <- new_airline %>%
-  group_by(Age_Group, Customer.Type) %>%
+  group_by(`Age Group`, `Customer Type`) %>%
   summarise(n = n()) %>%
   ungroup()
 
-# Calculate percentage within each Age_Group and Customer.Type combination
+# Calculate percentage within each Age Group and Customer Type combination
 age_group_counts <- age_group_counts %>%
-  group_by(Age_Group) %>%
+  group_by(`Age Group`) %>%
   mutate(perc = n / sum(n) * 100)
 
-# Plot the distribution of Age_Group by Customer.Type
+# Plot the distribution of Age Group by Customer Type
 ggplot(age_group_counts,
-       aes(x = Age_Group, y = perc, fill = Customer.Type)) +
+       aes(x = `Age Group`, y = perc, fill = `Customer Type`)) +
   geom_bar(stat = "identity",
            position = "stack",
            width = 0.8) +
@@ -224,12 +237,12 @@ ggplot(age_group_counts,
     legend.text = element_text(size = 10)
   )
 
-# Customer Satisfaction by age group
+# Customer Satisfaction by Age Group
 new_airline |>
-  group_by(Age_Group, satisfaction) |>
+  group_by(`Age Group`, Satisfaction) |>
   summarise(n = n()) |>
   mutate(perc = n / sum(n) * 100) |>
-  ggplot(aes(x = satisfaction, y = n, fill = satisfaction)) +  # Updated fill aesthetics to satisfaction
+  ggplot(aes(x = Satisfaction, y = n, fill = Satisfaction)) +  # Updated fill aesthetics to satisfaction
   geom_bar(
     stat = "identity",
     position = "stack",
@@ -249,7 +262,7 @@ new_airline |>
     color = "black"
   ) +
   labs(title = "Customer Satisfaction by Age Group", x = "Satisfaction", y = "Count") +
-  facet_grid(. ~ Age_Group,
+  facet_grid(. ~ `Age Group`,
              scales = "free_x",
              space = "free_x",
              switch = "x") +  # Added facet grid for Gender
@@ -270,12 +283,12 @@ new_airline |>
 # This suggests that there may be underlying issues with the service provided by the airline,
 # as the proportion of dissatisfied customers is generally high across these age groups.
 
-# Customer Satisfaction by age group and customer type
+# Customer Satisfaction by Age Group and Customer Type
 new_airline |>
-  group_by(Age_Group, Customer.Type, satisfaction) |>
+  group_by(`Age Group`, `Customer Type`, Satisfaction) |>
   summarise(n = n()) |>
   mutate(perc = n / sum(n) * 100) |>
-  ggplot(aes(x = satisfaction, y = n, fill = satisfaction)) +
+  ggplot(aes(x = Satisfaction, y = n, fill = Satisfaction)) +
   geom_bar(
     stat = "identity",
     position = "stack",
@@ -293,7 +306,7 @@ new_airline |>
   ) +
   labs(title = "Customer Satisfaction by Age Group and Customer Type", x = "Satisfaction", y = "Count") +
   facet_grid(
-    . ~ Age_Group + Customer.Type,
+    . ~ `Age Group` + `Customer Type`,
     # Updated facet grid to include Customer.Type
     scales = "free_x",
     space = "free_x",
