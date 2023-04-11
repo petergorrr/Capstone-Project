@@ -80,15 +80,32 @@ new_airline <- new_airline %>%
 View(new_airline)
 
 
+# Q1.What is the distribution of customer satisfaction levels in the dataset?
 
-
-### Data Visualization ###
-
-# Plot customer satisfaction by gender
-library(dplyr)
+# Load needed libraries
 library(ggplot2)
 library(forcats)
 
+# Plot 1 :A bar plot showing satisfaction levels of customers for the airline.
+new_airline %>%
+  ggplot(aes(x = Satisfaction, fill = Satisfaction)) +
+  geom_bar(width = 0.5) +
+  geom_text(
+    aes(label = ..count.., y = ..count..),
+    stat = "count",
+    position = position_stack(vjust = 0.5)
+  ) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  labs(x = "Satisfaction", y = "Count", title = "Customer Satisfaction Distribution") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+# From the plot above ,
+# we get to know that satisfied customers are more than dissatisfied customers.
 
 new_airline |>
   group_by(Gender, Satisfaction) |>
@@ -130,7 +147,6 @@ new_airline |>
     legend.text = element_text(size = 10)
   )
 
-# The plot shows that more customers are satisfied than dissatisfied.
 # Among males, 56% are dissatisfied and 44% are satisfied.
 # Among females, 65% are satisfied and 35% are dissatisfied.
 # In conclusion, males tend to be dissatisfied with the airline service while females tend to be more satisfied.
@@ -162,10 +178,10 @@ new_airline %>%
     color = "black"
   ) +
   labs(title = "Customer Satisfaction by Gender and Customer Type", x = "Satisfaction", y = "Count") +
-  facet_wrap( ~ Gender,
-              nrow = 1,
-              scales = "free_x",
-              switch = "x") +
+  facet_wrap(~ Gender,
+             nrow = 1,
+             scales = "free_x",
+             switch = "x") +
   scale_x_discrete(labels = c("Dissatisfied", "Satisfied")) +
   theme_minimal() +
   theme(
@@ -176,9 +192,10 @@ new_airline %>%
     legend.text = element_text(size = 10)
   )
 
-
 # A surprising fact is that loyal male customers actually make up 77% of those
 # who are dissatisfied with the airline service.
+# Therefore, we can conclude that there's something
+# about the service that fails to satisfy the loyal customers.
 
 new_airline %>%
   group_by(Gender, `Customer Type`) %>%
@@ -210,32 +227,7 @@ new_airline %>%
 
 # I do not see anything special about this.
 
-# Group by Age Group and Customer Type, calculate counts
-age_group_counts <- new_airline %>%
-  group_by(`Age Group`, `Customer Type`) %>%
-  summarise(n = n()) %>%
-  ungroup()
 
-# Calculate percentage within each Age Group and Customer Type combination
-age_group_counts <- age_group_counts %>%
-  group_by(`Age Group`) %>%
-  mutate(perc = n / sum(n) * 100)
-
-# Plot the distribution of Age Group by Customer Type
-ggplot(age_group_counts,
-       aes(x = `Age Group`, y = perc, fill = `Customer Type`)) +
-  geom_bar(stat = "identity",
-           position = "stack",
-           width = 0.8) +
-  labs(title = "Distribution of Age Group by Customer Type", x = "Age Group", y = "Percentage") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(size = 16, hjust = 0.5),
-    axis.title = element_text(size = 12),
-    axis.text = element_text(size = 10),
-    legend.title = element_text(size = 12),
-    legend.text = element_text(size = 10)
-  )
 
 # Customer Satisfaction by Age Group
 new_airline |>
@@ -315,6 +307,168 @@ new_airline |>
   scale_x_discrete(labels = c("Dissatisfied", "Satisfied")) +
   scale_fill_discrete(name = "Satisfaction",
                       labels = c("Dissatisfied", "Satisfied")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+
+# Generally speaking , except for the loyal adults group ,
+# every other group has high proportion of not liking the airline service.
+
+
+# Check the distribution of customer satisfaction level and their class of seats
+ggplot(new_airline, aes(x = Class, y = ..count.., fill = Satisfaction)) +
+  geom_bar(stat = "count", position = "dodge") +
+  labs(title = "Distribution of Customers by Class of Seats and Satisfaction",
+       x = "Class of Seats", y = "Count") +
+  scale_fill_discrete(name = "Satisfaction") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+
+# The plot fulfills my expectation for the outcome.
+
+
+ggplot(new_airline, aes(x = Class, fill = Satisfaction)) +
+  geom_bar(position = "dodge") +
+  facet_grid(. ~ Gender) +
+  labs(title = "Distribution of Customers by Class of Seats and Satisfaction",
+       x = "Class of Seats", y = "Count") +
+  scale_fill_discrete(name = "Satisfaction") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_x_discrete(limits = c("Business", "Eco", "Eco Plus"))
+
+# We can see there's an exceptional high number of male who are unsatisfied with
+# the economy class service of the airline , which is quite worth a probe.
+
+# Question 2: What happened to those males who's taken economy class in the airline?
+
+# Filter the rows to only males with economy class.
+airline_male_economy <- new_airline %>%
+  filter(Gender == "Male", Class == "Eco")
+
+airline_male_economy |>
+  group_by(`Age Group`, `Customer Type`, Satisfaction) |>
+  summarise(n = n()) |>
+  mutate(perc = n / sum(n) * 100) |>
+  ggplot(aes(x = Satisfaction, y = n, fill = Satisfaction)) +
+  geom_bar(
+    stat = "identity",
+    position = "stack",
+    width = 0.35,
+    color = "black",
+    size = 1
+  ) +
+  geom_text(
+    aes(label = paste0(round(perc), "%")),
+    position = position_stack(vjust = 0.5),
+    size = 2.65,
+    hjust = 0.5,
+    vjust = -0.5,
+    color = "black"
+  ) +
+  labs(title = "Customer Satisfaction by Age Group and Customer Type", x = "Satisfaction", y = "Count") +
+  facet_grid(
+    . ~ `Age Group` + `Customer Type`,
+    # Updated facet grid to include Customer.Type
+    scales = "free_x",
+    space = "free_x",
+    switch = "x"
+  ) +
+  scale_x_discrete(labels = c("Dissatisfied", "Satisfied")) +
+  scale_fill_discrete(name = "Satisfaction",
+                      labels = c("Dissatisfied", "Satisfied")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+
+# Every age group has a very large contrast of people 
+# who do not like the airline service.
+
+airline_male_economy %>%
+  group_by(`Age Group`, `Customer Type`, `Type of Travel`, Satisfaction) %>%
+  summarise(n = n()) %>%
+  mutate(perc = n / sum(n) * 100) %>%
+  ggplot(aes(x = Satisfaction, y = perc, fill = Satisfaction)) +
+  geom_bar(
+    stat = "identity",
+    position = "fill",
+    color = "black",
+    size = 1,
+    width = 0.7 # set width to control the bar width
+  ) +
+  geom_text(
+    aes(label = paste0(round(perc), "%")),
+    position = position_fill(vjust = 0.5),
+    size = 4,
+    color = "black"
+  ) +
+  labs(title = "Customer Satisfaction by Age Group, Customer Type, and Type of Travel",
+       x = "Satisfaction", y = "Percentage") +
+  facet_grid(
+    `Age Group` ~ `Customer Type` + `Type of Travel`,
+    scales = "free",
+    space = "free_x",
+    switch = "y"
+  ) +
+  scale_x_discrete(labels = c("Dissatisfied", "Satisfied")) +
+  scale_fill_discrete(name = "Satisfaction",
+                      labels = c("Dissatisfied", "Satisfied")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10),
+    strip.text = element_text(size = 10, face = "bold"),
+    strip.background = element_blank(),
+    panel.spacing = unit(0.5, "lines")
+  )
+
+airline_male_economy %>%
+  group_by(`Type of Travel`, Satisfaction) %>%
+  summarise(n = n()) %>%
+  mutate(perc = n / sum(n) * 100) %>%
+  ggplot(aes(x = Satisfaction, y = perc, fill = `Type of Travel`)) +
+  geom_bar(
+    stat = "identity",
+    position = "fill",
+    color = "black",
+    size = 1,
+    width = 0.7
+  ) +
+  geom_text(
+    aes(label = paste0(round(perc), "%")),
+    position = position_fill(vjust = 0.5),
+    size = 3,
+    hjust = 0.5,
+    color = "black"
+  ) +
+  labs(title = "Customer Satisfaction by Type of Travel", x = "Satisfaction", y = "Percentage") +
+  scale_x_discrete(labels = c("Dissatisfied", "Satisfied")) +
+  scale_fill_discrete(name = "Type of Travel") +
   theme_minimal() +
   theme(
     plot.title = element_text(size = 16, hjust = 0.5),
