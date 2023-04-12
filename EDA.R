@@ -1,7 +1,7 @@
 # Load the dataset
 airline <- read.csv("Invistico_Airline.csv")
 
-# Load the necessary libraries for data manipulation
+# Load the library for data manipulation
 library(dplyr)
 
 # Create a new column 'Age_Group' based on age categories using mutate()
@@ -76,8 +76,15 @@ new_airline <- new_airline %>%
     "Arrival Delay in Minutes" = Arrival.Delay.in.Minutes
   )
 
-# Display the resulting dataset with replaced labels
-View(new_airline)
+# Define the intervals and corresponding labels
+intervals <- c(0, 999, 2999, Inf)
+labels <- c("Short", "Medium", "Long")
+
+# Categorize the flight distance column into three levels
+new_airline <- new_airline %>%
+  mutate(`Flight Distance Category` = cut(`Flight Distance`, breaks = intervals, labels = labels, include.lowest = TRUE)) |> 
+  relocate("Flight Distance Category", .after = `Flight Distance`) |>  # Reorder columns using relocate()
+  select(-`Flight Distance`) # Remove the original Flight_Distance column
 
 
 # Q1.What is the distribution of customer satisfaction levels in the dataset?
@@ -477,3 +484,12 @@ airline_male_economy %>%
     legend.title = element_text(size = 12),
     legend.text = element_text(size = 10)
   )
+
+# Plot histogram with colored bars for each satisfaction level
+ggplot(airline_male_economy, aes(x = `Flight Distance Category`, fill = Satisfaction)) +
+  geom_bar(binwidth = 500, position = "dodge", color = "black") +
+  labs(title = "Distribution of Flight Distance by Satisfaction Level", x = "Flight Distance", y = "Count") +
+  scale_fill_discrete(name = "Satisfaction") +
+  theme_minimal()
+
+# it does not seem that the distance has affected the expected satisfaction level on the customers.
