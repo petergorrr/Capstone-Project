@@ -16,21 +16,29 @@ df$satisfaction <- as.factor(df$satisfaction)
 # Remove rows with missing values
 df <- na.omit(df)
 
-# Split the dataset into training and testing data
+# Perform k-fold cross-validation
 set.seed(123)
-train_indices <- sample(1:nrow(df), nrow(df)*0.8) # 80% for training
-train_df <- df[train_indices, ]
-test_df <- df[-train_indices, ]
+k <- 5 # Number of folds
+accuracy <- numeric(k) # Store accuracy for each fold
 
-# Build the random forest model
-rf_model <- randomForest(satisfaction ~ ., data = train_df, ntree = 100)
+# Loop through each fold
+for (i in 1:k) {
+  # Split data into training and testing sets
+  indices <- sample(1:nrow(df), nrow(df)*(k-1)/k) # (k-1)/k for training
+  train_df <- df[indices, ]
+  test_df <- df[-indices, ]
+  
+  # Build the random forest model
+  rf_model <- randomForest(satisfaction ~ ., data = train_df, ntree = 100)
+  
+  # Make predictions on the testing data
+  predictions <- predict(rf_model, test_df)
+  
+  # Evaluate model performance
+  confusion_matrix <- table(predictions, test_df$satisfaction)
+  accuracy[i] <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+}
 
-# Make predictions on the testing data
-predictions <- predict(rf_model, test_df)
-
-# Evaluate model performance
-confusion_matrix <- table(predictions, test_df$satisfaction)
-accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
-cat("Accuracy:", accuracy, "\n")
-cat("Confusion Matrix:\n")
-print(confusion_matrix)
+# Calculate mean accuracy across all folds
+mean_accuracy <- mean(accuracy)
+cat("Mean Accuracy:", mean_accuracy, "\n")
