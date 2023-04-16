@@ -13,47 +13,41 @@ new_airline <- airline %>%
       Age >= 25 & Age <= 64 ~ "Adults (25-64 years)",
       Age >= 65 ~ "Seniors (65 years and over)",
       TRUE ~ NA_character_  # NA for other cases
+    ),
+    across(
+      all_of(c(
+        "Seat.comfort",
+        "Departure.Arrival.time.convenient",
+        "Food.and.drink",
+        "Inflight.wifi.service",
+        "Inflight.entertainment",
+        "Online.support",
+        "Ease.of.Online.booking",
+        "On.board.service",
+        "Leg.room.service",
+        "Baggage.handling",
+        "Checkin.service",
+        "Cleanliness",
+        "Online.boarding"
+      )),
+      factor,
+      levels = 0:5,
+      labels = c(
+        "Very Poor",
+        "Poor",
+        "Below Average",
+        "Average",
+        "Above Average",
+        "Excellent"
+      )
+    ),
+    `Flight Distance Category` = cut(
+      Flight.Distance,
+      breaks = c(0, 999, 2999, Inf),
+      labels = c("Short", "Medium", "Long"),
+      include.lowest = TRUE
     )
   ) %>%
-  relocate("Age Group", .after = Age) # Reorder columns using relocate()
-
-# Define the labels for the five-level ordinal scale
-labels <-
-  c("Very Poor",
-    "Poor",
-    "Below Average",
-    "Average",
-    "Above Average",
-    "Excellent")
-
-# Columns to categorize
-cols_to_categorize <- c(
-  "Seat.comfort",
-  "Departure.Arrival.time.convenient",
-  "Food.and.drink",
-  "Inflight.wifi.service",
-  "Inflight.entertainment",
-  "Online.support",
-  "Ease.of.Online.booking",
-  "On.board.service",
-  "Leg.room.service",
-  "Baggage.handling",
-  "Checkin.service",
-  "Cleanliness",
-  "Online.boarding"
-)
-
-# Apply factor labels to columns
-new_airline <- new_airline %>%
-  mutate(across(
-    all_of(cols_to_categorize),
-    factor,
-    levels = 0:5,
-    labels = labels
-  ))
-
-# Rename columns in the dataset
-new_airline <- new_airline %>%
   rename(
     "Satisfaction" = satisfaction,
     "Customer Type" = Customer.Type,
@@ -74,18 +68,10 @@ new_airline <- new_airline %>%
     "Online Boarding" = Online.boarding,
     "Departure Delay in Minutes" = Departure.Delay.in.Minutes,
     "Arrival Delay in Minutes" = Arrival.Delay.in.Minutes
-  )
-
-# Define the intervals and corresponding labels
-intervals <- c(0, 999, 2999, Inf)
-labels <- c("Short", "Medium", "Long")
-
-# Categorize the flight distance column into three levels
-new_airline <- new_airline %>%
-  mutate(`Flight Distance Category` = cut(`Flight Distance`, breaks = intervals, labels = labels, include.lowest = TRUE)) |> 
-  relocate("Flight Distance Category", .after = `Flight Distance`) |>  # Reorder columns using relocate()
+  ) %>%
+  relocate("Age Group", .after = Age) %>%
+  relocate("Flight Distance Category", .after = `Flight Distance`) %>%
   select(-`Flight Distance`) # Remove the original Flight_Distance column
-
 
 # Q1.What is the distribution of customer satisfaction levels in the dataset?
 
