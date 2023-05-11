@@ -4,7 +4,7 @@ airline <- read.csv("Invistico_Airline.csv")
 # Load the library for data manipulation
 library(dplyr)
 
-# Create a new column 'Age_Group' based on age categories using mutate()
+# Data Manipulation
 new_airline <- airline %>%
   mutate(
     "Age Group" = case_when(
@@ -15,21 +15,23 @@ new_airline <- airline %>%
       TRUE ~ NA_character_  # NA for other cases
     ),
     across(
-      all_of(c(
-        "Seat.comfort",
-        "Departure.Arrival.time.convenient",
-        "Food.and.drink",
-        "Inflight.wifi.service",
-        "Inflight.entertainment",
-        "Online.support",
-        "Ease.of.Online.booking",
-        "On.board.service",
-        "Leg.room.service",
-        "Baggage.handling",
-        "Checkin.service",
-        "Cleanliness",
-        "Online.boarding"
-      )),
+      all_of(
+        c(
+          "Seat.comfort",
+          "Departure.Arrival.time.convenient",
+          "Food.and.drink",
+          "Inflight.wifi.service",
+          "Inflight.entertainment",
+          "Online.support",
+          "Ease.of.Online.booking",
+          "On.board.service",
+          "Leg.room.service",
+          "Baggage.handling",
+          "Checkin.service",
+          "Cleanliness",
+          "Online.boarding"
+        )
+      ),
       factor,
       levels = 0:5,
       labels = c(
@@ -72,6 +74,7 @@ new_airline <- airline %>%
   relocate("Age Group", .after = Age) %>%
   relocate("Flight Distance Category", .after = `Flight Distance`) %>%
   select(-`Flight Distance`) # Remove the original Flight_Distance column
+
 
 # Q1.What is the distribution of customer satisfaction levels in the dataset?
 
@@ -171,10 +174,10 @@ new_airline %>%
     color = "black"
   ) +
   labs(title = "Customer Satisfaction by Gender and Customer Type", x = "Satisfaction", y = "Count") +
-  facet_wrap(~ Gender,
-             nrow = 1,
-             scales = "free_x",
-             switch = "x") +
+  facet_wrap( ~ Gender,
+              nrow = 1,
+              scales = "free_x",
+              switch = "x") +
   scale_x_discrete(labels = c("Dissatisfied", "Satisfied")) +
   theme_minimal() +
   theme(
@@ -396,7 +399,7 @@ airline_male_economy |>
     legend.text = element_text(size = 10)
   )
 
-# Every age group has a very large contrast of people 
+# Every age group has a very large contrast of people
 # who do not like the airline service.
 
 airline_male_economy %>%
@@ -472,8 +475,11 @@ airline_male_economy %>%
   )
 
 # Plot histogram with colored bars for each satisfaction level
-ggplot(airline_male_economy, aes(x = `Flight Distance Category`, fill = Satisfaction)) +
-  geom_bar(binwidth = 500, position = "dodge", color = "black") +
+ggplot(airline_male_economy,
+       aes(x = `Flight Distance Category`, fill = Satisfaction)) +
+  geom_bar(binwidth = 500,
+           position = "dodge",
+           color = "black") +
   labs(title = "Distribution of Flight Distance by Satisfaction Level", x = "Flight Distance", y = "Count") +
   scale_fill_discrete(name = "Satisfaction") +
   theme_minimal()
